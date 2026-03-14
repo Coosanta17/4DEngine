@@ -10,7 +10,11 @@ endif()
 
 find_package(SDL2 REQUIRED)
 
-add_executable(untitled main.cpp)
+add_executable(untitled main.cpp
+        include/math.hpp
+        include/camera.hpp
+        include/mesh.hpp
+        include/renderer.hpp)
 
 target_link_libraries(untitled PRIVATE SDL2::SDL2)
 
