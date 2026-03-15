@@ -3,7 +3,7 @@
 
 #include <SDL2/SDL.h>
 
-#include "camera.hpp"
+#include "Camera3D.hpp"
 #include "math.hpp"
 #include "mesh.hpp"
 
@@ -19,7 +19,7 @@ struct Renderer {
         return Vec3{x, y, p.z};
     }
 
-    void drawMesh(const Mesh& mesh, const Camera& cam) const {
+    void drawMesh(const Mesh& mesh, const Camera3D& cam) const {
         const Vec3 forward = cam.forward();
         const Vec3 right = cam.right();
         const Vec3 up = cam.up();

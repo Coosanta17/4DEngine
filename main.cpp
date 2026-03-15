@@ -41,7 +41,7 @@ int main() {
 
     const Renderer renderer{sdlRenderer, width, height};
 
-    Camera cam;
+    Camera3D cam;
     const Mesh cube = Mesh::makeCube();
     const Mesh axes = Mesh::makeAxes();
 

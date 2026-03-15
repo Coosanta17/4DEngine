@@ -12,9 +12,11 @@ find_package(SDL2 REQUIRED)
 
 add_executable(untitled main.cpp
         include/math.hpp
-        include/camera.hpp
+        include/Camera3D.hpp
         include/mesh.hpp
-        include/renderer.hpp)
+        include/renderer.hpp
+        include/Camera4D.hpp
+        include/Camera.hpp)
 
 target_link_libraries(untitled PRIVATE SDL2::SDL2)
 
