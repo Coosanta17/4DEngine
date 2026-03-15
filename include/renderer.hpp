@@ -15,7 +15,7 @@ struct Renderer {
     [[nodiscard]] Vec3 project(const Vec3& p) const noexcept {
         constexpr float fov = 400.0f;
         const float x = (p.x / p.z) * fov + static_cast<float>(width) / 2.0f;
-        const float y = (p.y / p.z) * fov + static_cast<float>(height) / 2.0f;
+        const float y = -(p.y / p.z) * fov + static_cast<float>(height) / 2.0f;
         return Vec3{x, y, p.z};
     }
 
@@ -24,9 +24,9 @@ struct Renderer {
         const Vec3 right = cam.right();
         const Vec3 up = cam.up();
 
-        for (const auto& line : mesh.lines) {
-            Vec3 v1 = mesh.vertices[line.a] - cam.pos;
-            Vec3 v2 = mesh.vertices[line.b] - cam.pos;
+        for (const auto& [a, b] : mesh.lines) {
+            Vec3 v1 = mesh.vertices[a] - cam.getPos();
+            Vec3 v2 = mesh.vertices[b] - cam.getPos();
 
             // Convert world-space points to camera-space using camera basis vectors.
             v1 = Vec3{v1.dot(right), v1.dot(up), v1.dot(forward)};

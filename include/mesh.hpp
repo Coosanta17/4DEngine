@@ -28,6 +28,22 @@ struct Mesh {
 
         return m;
     }
+
+    static Mesh makeAxes(const float length = 2.0f) {
+        Mesh m;
+        m.vertices = {
+            Vec3{0, 0, 0}, // origin
+            // Vec3{length, 0, 0}, // +X
+            // Vec3{0, length, 0}, // +Y
+            Vec3{0, 0, length} // +Z
+        };
+        m.lines = {
+            // {0, 1}, // X axis
+            // {0, 2}, // Y axis
+            {0, 1} // Z axis
+        };
+        return m;
+    }
 };
 
 #endif
