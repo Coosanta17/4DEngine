@@ -1,0 +1,80 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cmake-build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux gcc, apt
+            os: ubuntu-latest
+            cc: gcc
+            cxx: g++
+          - name: macOS clang, brew
+            os: macos-latest
+          - name: Windows MSVC, vcpkg
+            os: windows-latest
+            vcpkg_triplet: x64-windows
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install modern CMake + Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc g++ \
+            libsdl2-dev \
+            pkg-config
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install sdl2
+
+      - name: Set up MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Set up vcpkg
+        if: runner.os == 'Windows'
+        uses: lukka/run-vcpkg@v11
+
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          vcpkg install sdl2:${{ matrix.vcpkg_triplet }}
+
+      - name: Configure Linux
+        if: runner.os != 'Windows'
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Configure Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cmake -S . -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }}
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
