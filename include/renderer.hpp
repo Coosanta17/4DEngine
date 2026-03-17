@@ -157,8 +157,8 @@ struct Renderer4D {
     }
 
     [[nodiscard]] static Vec3 project4Dto3D(const Vec4& p) noexcept {
-        const float scale = fov4D / p.w;
-        return Vec3{p.x * scale, p.y * scale, p.z * scale};
+        const float wScale = fov4D / p.w;
+        return Vec3{p.x * wScale, p.y, p.z * wScale};
     }
 
     static void appendProjectedLine(Mesh<3>& outMesh, const Vec3& a, const Vec3& b) {

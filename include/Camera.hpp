@@ -34,7 +34,9 @@ protected:
 
     void applyMoveDelta(const Vector<N>& delta) {
         pos += delta * moveSpeed;
-        std::cout << pos.x << std::endl;
+        for (int i = 0; i < N; ++i) {
+            std::cout << pos[i] << (i < N - 1 ? ", " : "\n");
+        }
     }
 
 public:
