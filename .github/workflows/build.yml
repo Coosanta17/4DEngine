@@ -34,10 +34,10 @@ jobs:
             automake \
             autoconf-archive \
             libtool \
-            libltdl-dev \ 
-            pkg-config \ 
+            libltdl-dev \
+            pkg-config \
             libx11-dev libxft-dev libxext-dev \
-            libwayland-dev libxkbcommon-dev libegl1-mesa-dev \ 
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
             libibus-1.0-dev
 
       - name: Install Ninja (Windows)
