@@ -1,6 +1,7 @@
 #ifndef MESH_HPP
 #define MESH_HPP
 
+#include <cstddef>
 #include <vector>
 #include "math.hpp"
 
@@ -8,40 +9,54 @@ struct Line {
     int a, b;
 };
 
+template <int N>
 struct Mesh {
-    std::vector<Vec3> vertices;
+    static_assert(N > 0, "Mesh dimension must be positive");
+
+    std::vector<Vector<N>> vertices;
     std::vector<Line> lines;
 
     static Mesh makeCube() {
         Mesh m;
 
-        m.vertices = {
-            Vec3{-1, -1, -1}, Vec3{1, -1, -1}, Vec3{1, 1, -1}, Vec3{-1, 1, -1},
-            Vec3{-1, -1, 1}, Vec3{1, -1, 1}, Vec3{1, 1, 1}, Vec3{-1, 1, 1}
-        };
+        const std::size_t vertexCount = std::size_t{1} << N;
+        m.vertices.reserve(vertexCount);
+        m.lines.reserve((vertexCount * N) / 2);
 
-        m.lines = {
-            {0, 1}, {1, 2}, {2, 3}, {3, 0},
-            {4, 5}, {5, 6}, {6, 7}, {7, 4},
-            {0, 4}, {1, 5}, {2, 6}, {3, 7}
-        };
+        for (std::size_t mask = 0; mask < vertexCount; ++mask) {
+            Vector<N> vertex{};
+            for (int dim = 0; dim < N; ++dim) {
+                const std::size_t bit = std::size_t{1} << dim;
+                vertex[dim] = (mask & bit) ? 1.0f : -1.0f;
+            }
+            m.vertices.push_back(vertex);
+        }
+
+        // Each edge connects two vertices that differ by exactly one bit.
+        for (std::size_t mask = 0; mask < vertexCount; ++mask) {
+            for (int dim = 0; dim < N; ++dim) {
+                if (const std::size_t bit = std::size_t{1} << dim; (mask & bit) == 0) {
+                    m.lines.push_back({
+                        static_cast<int>(mask),
+                        static_cast<int>(mask | bit)
+                    });
+                }
+            }
+        }
 
         return m;
     }
 
     static Mesh makeAxes(const float length = 2.0f) {
         Mesh m;
-        m.vertices = {
-            Vec3{0, 0, 0}, // origin
-            // Vec3{length, 0, 0}, // +X
-            // Vec3{0, length, 0}, // +Y
-            Vec3{0, 0, length} // +Z
-        };
-        m.lines = {
-            // {0, 1}, // X axis
-            // {0, 2}, // Y axis
-            {0, 1} // Z axis
-        };
+
+        Vector<N> origin{};
+        Vector<N> up{};
+        up[N - 1] = length;
+
+        m.vertices = {origin, up};
+        m.lines = {{0, 1}};
+
         return m;
     }
 };

@@ -319,6 +319,7 @@ using Mat4x3 = Matrix<4, 3>;
 }
 
 // TODO Make cleaner to suit within the current structure in a more maintainable fashion.
+// FIXME These matrices aren't even being used
 inline Mat4 rotY(const float a){
     Mat4 r = Mat4::identity();
     r.data[0][0]=cos(a);

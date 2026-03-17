@@ -5,8 +5,7 @@
 
 #include "math.hpp"
 
-constexpr float MAX_PITCH = (89 * std::numbers::pi_v<float>) / 180;
-constexpr float FULL_ROT = 2 * std::numbers::pi_v<float>;
+constexpr float MAX_PITCH = std::numbers::pi_v<float> / 2 - 0.0001f;
 
 // Camera Core for N-Dimensional cameras, where N > 2 (well technically N can be 2, but I have no idea what it would do)
 template <int N>
@@ -35,6 +34,7 @@ protected:
 
     void applyMoveDelta(const Vector<N>& delta) {
         pos += delta * moveSpeed;
+        std::cout << pos.x << std::endl;
     }
 
 public:
