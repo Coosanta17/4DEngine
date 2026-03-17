@@ -1,83 +1,72 @@
-name: build
+name: Build
 
 on:
   push:
   pull_request:
 
 jobs:
-  cmake-build:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
-
+  build:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: Linux gcc, apt
-            os: ubuntu-latest
-            cc: gcc
-            cxx: g++
-#          - name: Windows MSVC, vcpkg
-#            os: windows-latest
-#            vcpkg_triplet: x64-windows
+        os: [ ubuntu-latest, windows-latest ]
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      VCPKG_DEFAULT_TRIPLET: ${{ matrix.os == 'windows-latest' && 'x64-windows' || 'x64-linux' }}
+      VCPKG_FEATURE_FLAGS: "manifests,binarycaching"
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install modern CMake + Ninja
-        uses: lukka/get-cmake@latest
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install Linux dependencies
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            gcc g++ \
-            libsdl2-dev \
-            pkg-config
+          sudo apt-get install -y \
+            ninja-build \
+            build-essential \
+            autoconf \
+            automake \
+            autoconf-archive \
+            libtool \
+            pkg-config \
+            curl zip unzip tar
 
-      - name: Set up MSVC
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
+      - name: Install Ninja (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install ninja
 
-      - name: Set up vcpkg
-        if: runner.os == 'Windows'
-        shell: pwsh
+      - name: Cache vcpkg
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/vcpkg
+            ${{ github.workspace }}/vcpkg_installed
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-
+
+      - name: Clone vcpkg
         run: |
-          $vcpkgRoot = "$env:RUNNER_TEMP\vcpkg"
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git $vcpkgRoot
-          & "$vcpkgRoot\bootstrap-vcpkg.bat" -disableMetrics
-          "VCPKG_ROOT=$vcpkgRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          git clone https://github.com/microsoft/vcpkg.git
 
-      - name: Install Windows dependencies
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          & "$env:VCPKG_ROOT\vcpkg.exe" install sdl2:${{ matrix.vcpkg_triplet }}
+      - name: Bootstrap vcpkg (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: ./vcpkg/bootstrap-vcpkg.sh
 
-      - name: Configure Linux
-        if: runner.os == 'Linux'
-        env:
-          CC: ${{ matrix.cc }}
-          CXX: ${{ matrix.cxx }}
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Bootstrap vcpkg (Windows)
+        if: matrix.os == 'windows-latest'
+        run: .\vcpkg\bootstrap-vcpkg.bat
 
-      - name: Configure Windows
-        if: runner.os == 'Windows'
-        shell: pwsh
+      - name: Configure
         run: |
-          cmake -S . -B build -G Ninja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }}
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: Build
-        run: cmake --build build --config Release --parallel
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.name }}-build
-          path: build
-          if-no-files-found: error
+        run: cmake --build build --parallel

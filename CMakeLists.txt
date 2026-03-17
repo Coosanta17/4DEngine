@@ -8,7 +8,7 @@ if(APPLE)
     list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew" "/usr/local")
 endif()
 
-find_package(SDL2 REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
 
 add_executable(untitled main.cpp
         include/math.hpp
@@ -18,7 +18,7 @@ add_executable(untitled main.cpp
         include/Camera4D.hpp
         include/Camera.hpp)
 
-target_link_libraries(untitled PRIVATE SDL2::SDL2)
+target_link_libraries(untitled PRIVATE SDL2::SDL2 SDL2::SDL2main)
 
 # On Windows, copy the SDL2.dll next to the executable
 if(WIN32)
