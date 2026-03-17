@@ -54,10 +54,7 @@ void drawWireLetterD(SDL_Renderer* renderer, const SDL_Rect& area) {
     SDL_RenderDrawLine(renderer, r - 2, b - 2, l, b);
 }
 
-void drawMenuButton(SDL_Renderer* renderer,
-                    const SDL_Rect& button,
-                    const bool hovered,
-                    const bool is4DButton) {
+void drawMenuButton(SDL_Renderer* renderer, const SDL_Rect& button, const bool hovered, const bool is4DButton) {
     if (is4DButton) {
         SDL_SetRenderDrawColor(renderer, hovered ? 120 : 90, hovered ? 130 : 90, hovered ? 220 : 180, 255);
     }
@@ -103,13 +100,12 @@ RenderMode runRendererSelectionMenu() {
         return RenderMode::None;
     }
 
-    const SDL_Rect button3D{30, 60, 160, 100};
-    const SDL_Rect button4D{230, 60, 160, 100};
-
-    RenderMode selected = RenderMode::None;
+    auto selected = RenderMode::None;
     bool running = true;
 
     while (running) {
+        constexpr SDL_Rect button4D{230, 60, 160, 100};
+        constexpr SDL_Rect button3D{30, 60, 160, 100};
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
@@ -259,10 +255,13 @@ int run4DRenderer() {
 
 
 int main(int argc, char* argv[]) {
+    std::cout << SDL_GetCurrentVideoDriver() << std::endl;
+
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "0");
     SDL_SetHint(SDL_HINT_VIDEO_WAYLAND_EMULATE_MOUSE_WARP, "1");
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return 1;
     }
 
