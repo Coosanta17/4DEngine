@@ -44,6 +44,13 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: choco install ninja
 
+      - name: Set up MSVC
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Ensure vcpkg_installed exists
+        run: mkdir -p ${{ github.workspace }}/vcpkg_installed
+
       - name: Cache vcpkg
         uses: actions/cache@v4
         with:
@@ -63,10 +70,6 @@ jobs:
       - name: Bootstrap vcpkg (Windows)
         if: matrix.os == 'windows-latest'
         run: .\vcpkg\bootstrap-vcpkg.bat
-
-      - name: Set up MSVC
-        if: matrix.os == 'windows-latest'
-        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure (Linux)
         if: matrix.os == 'ubuntu-latest'
