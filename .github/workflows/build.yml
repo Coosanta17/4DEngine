@@ -33,6 +33,7 @@ jobs:
             automake \
             autoconf-archive \
             libtool \
+            libltdl-dev \
             pkg-config \
             curl zip unzip tar
 
@@ -62,8 +63,29 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: .\vcpkg\bootstrap-vcpkg.bat
 
-      - name: Configure
+      - name: Configure (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+      - name: Configure (Windows)
+        if: matrix.os == 'windows-latest'
+        run: cmake -S . -B build -G "Ninja" -A x64 -T host=x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: Build
         run: cmake --build build --parallel
+
+      - name: Upload Linux
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: 4DEngine-linux
+          path: build/4DEngine
+
+      - name: Upload Windows
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: 4DEngine-windows
+          path: |
+            build/4DEngine.exe
+            vcpkg_installed/x64-windows/bin/SDL2.dll

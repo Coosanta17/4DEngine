@@ -258,7 +258,7 @@ int run4DRenderer() {
 }
 
 
-int main() {
+int main(int argc, char* argv[]) {
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "0");
     SDL_SetHint(SDL_HINT_VIDEO_WAYLAND_EMULATE_MOUSE_WARP, "1");
 
