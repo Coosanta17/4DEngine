@@ -18,15 +18,19 @@ add_executable(4DEngine main.cpp
         include/Camera4D.hpp
         include/Camera.hpp)
 
-target_link_libraries(4DEngine PRIVATE SDL2::SDL2main SDL2::SDL2)
+# temporary for ease of distribution
+target_link_libraries(4DEngine PRIVATE SDL2::SDL2-static)
 
-# On Windows, copy the SDL2.dll next to the executable
+# Statically link msvc dlls temporary for ease of distribution
 if(WIN32)
+    if(MSVC)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    endif()
     set_target_properties(4DEngine PROPERTIES WIN32_EXECUTABLE ON)
-    add_custom_command(TARGET 4DEngine POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_RUNTIME_DLLS:4DEngine>
-            $<TARGET_FILE_DIR:4DEngine>
-            COMMAND_EXPAND_LISTS
-    )
+#    add_custom_command(TARGET 4DEngine POST_BUILD
+#            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#            $<TARGET_RUNTIME_DLLS:4DEngine>
+#            $<TARGET_FILE_DIR:4DEngine>
+#            COMMAND_EXPAND_LISTS
+#    )
 endif()

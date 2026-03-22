@@ -1,6 +1,8 @@
 #ifndef CAMERA_HPP
 #define CAMERA_HPP
 
+#include <algorithm>
+#include <iostream>
 #include <span>
 
 #include "math.hpp"
@@ -17,7 +19,7 @@ protected:
     constexpr static float moveSpeed = 0.0005f;
     constexpr static float lookSpeed = 0.0025f;
 
-    // TODO Decide between quaternions or matrices instead of whatever this is.
+    // TODO matrices instead of whatever this is.
     template <typename... Args>
     void applyLookDelta(Args&&... args) {
         static_assert(sizeof...(args) == N - 1, "Number of deltas must match N-1");

@@ -101,11 +101,11 @@ public:
     }
 
     void lookAna() {
-        applyLookDelta(0.0f, 0.0f, 1.0f);
+        applyLookDelta(0.0f, 0.0f, 0.1f);
     }
 
     void lookKata() {
-        applyLookDelta(0.0f, 0.0f, -1.0f);
+        applyLookDelta(0.0f, 0.0f, -0.1f);
     }
 
     void deltaLook(const float& deltaX, const float& deltaY) {

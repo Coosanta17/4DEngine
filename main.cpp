@@ -1,7 +1,9 @@
 #include <SDL2/SDL.h>
 
+#include "include/Camera4D.hpp"
+#include "include/Camera3D.hpp"
+#include "include/mesh.hpp"
 #include "include/renderer.hpp"
-
 
 constexpr int kRenderWidth = 800;
 constexpr int kRenderHeight = 600;

@@ -9,7 +9,6 @@
 #include "Camera4D.hpp"
 #include "math.hpp"
 #include "mesh.hpp"
-
 struct Renderer3D {
     SDL_Renderer* sdlRenderer;
     int width;

@@ -305,6 +305,7 @@ Matrix<R, C> operator*(const double s, const Matrix<R, C>& m) noexcept {
 template <int R, int C>
 using Mat = Matrix<R, C>;
 
+using Vec2 = Vector<2>;
 using Vec3 = Vector<3>;
 using Vec4 = Vector<4>;
 

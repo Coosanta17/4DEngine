@@ -15,6 +15,7 @@ class Camera3D final : public Camera<3> {
 protected:
 
 public:
+    // TODO: optimise unnecessary forward() calls before it becomes a problem
     // x=right, y=forward, z=up
     [[nodiscard]] Vec3 forward() const {
         const Vec3 result{cos(pitch) * sin(yaw), cos(pitch) * cos(yaw), sin(pitch)};
@@ -25,7 +26,6 @@ public:
         return forward().cross(Vec3{0, 0, 1}).normalise();
     }
 
-    // TODO: optimise unnecessary forward() calls before it becomes a problem
     [[nodiscard]] Vec3 up() const {
         return right().cross(forward()).normalise();
     }
