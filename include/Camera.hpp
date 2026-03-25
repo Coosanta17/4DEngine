@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <numbers>
 #include <span>
 
 #include "math.hpp"
