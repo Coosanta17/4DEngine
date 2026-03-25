@@ -19,7 +19,7 @@ add_executable(4DEngine main.cpp
         include/Camera.hpp)
 
 # temporary for ease of distribution
-target_link_libraries(4DEngine PRIVATE SDL2::SDL2-static)
+target_link_libraries(4DEngine PRIVATE SDL2::SDL2main SDL2::SDL2)
 
 # Statically link msvc dlls temporary for ease of distribution
 if(WIN32)
