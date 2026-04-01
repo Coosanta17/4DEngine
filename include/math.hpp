@@ -10,6 +10,18 @@ struct VectorStorage {
 };
 
 template <>
+struct VectorStorage<2> {
+    union {
+        struct {
+            float x;
+            float y;
+        };
+
+        float data[2];
+    };
+};
+
+template <>
 struct VectorStorage<3> {
     union {
         struct {
