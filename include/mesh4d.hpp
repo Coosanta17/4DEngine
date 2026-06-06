@@ -1,16 +1,19 @@
 #ifndef MESH4D_HPP
 #define MESH4D_HPP
 
+#include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <vector>
 
-#include "mesh4d_generated.h"
+#include <cereal/cereal.hpp>
+#include <cereal/types/vector.hpp>
 
 #include "math.hpp"
 
-static constexpr uint32_t MESH4D_MAGIC = 0x4D4D4D4D;
+static constexpr uint32_t MESH4D_MAGIC = 0x4DE004DE;
 static constexpr uint32_t MESH4D_VERSION = 1;
 
 struct Vertex4D {
@@ -42,46 +45,42 @@ struct Bounds4D {
     Vec4 max{};
 };
 
-struct SerialisedMesh4D {
-    uint8_t* buf;
-    size_t size;
-};
+template <class Archive, int N>
+void save(Archive& ar, const Vector<N>& v) {
+    ar(cereal::binary_data(v.data, sizeof(v.data)));
+}
 
-class IMesh4D {
-protected:
-    Mesh4DHeader header;
-    std::vector<Vertex4D> vertices;
-    std::vector<Tetrahedron> tetrahedra;
-    std::vector<Triangle> surfaceTriangles;
-    Bounds4D bounds{};
+template <class Archive, int N>
+void load(Archive& ar, Vector<N>& v) {
+    ar(cereal::binary_data(v.data, sizeof(v.data)));
+}
 
-public:
-    virtual ~IMesh4D() = default;
-    virtual Mesh4DHeader getHeader();
+template <class Archive>
+void serialize(Archive& ar, Vertex4D& v) {
+    ar(v.position, v.normal4D, v.uv, v.material);
+}
 
-    void computeBounds() {
-        assert(!vertices.empty());
+template <class Archive>
+void serialize(Archive& ar, Tetrahedron& t) {
+    ar(t.a, t.b, t.c, t.d);
+}
 
-        bounds.min = bounds.max = vertices[0].position;
-        for (const auto& v : vertices) {
-            const Vec4& p = v.position;
+template <class Archive>
+void serialize(Archive& ar, Triangle& t) {
+    ar(t.a, t.b, t.c);
+}
 
-            bounds.min.x = std::min(bounds.min.x, p.x);
-            bounds.min.y = std::min(bounds.min.y, p.y);
-            bounds.min.z = std::min(bounds.min.z, p.z);
-            bounds.min.w = std::min(bounds.min.w, p.w);
+template <class Archive>
+void serialize(Archive& ar, Mesh4DHeader& h) {
+    ar(h.magic, h.version, h.vertexCount, h.tetraCount, h.triangleCount, h.flags);
+}
 
-            bounds.max.x = std::max(bounds.max.x, p.x);
-            bounds.max.y = std::max(bounds.max.y, p.y);
-            bounds.max.z = std::max(bounds.max.z, p.z);
-            bounds.max.w = std::max(bounds.max.w, p.w);
-        }
-    }
-};
+template <class Archive>
+void serialize(Archive& ar, Bounds4D& b) {
+    ar(b.min, b.max);
+}
 
 class Mesh4D {
-    const mesh4d_fbs::Mesh4D* fb_mesh = nullptr;
-
 protected:
     Mesh4DHeader header;
     std::vector<Vertex4D> vertices;
@@ -89,7 +88,97 @@ protected:
     std::vector<Triangle> surfaceTriangles;
     Bounds4D bounds{};
 
+    void syncHeader() noexcept {
+        header.magic = MESH4D_MAGIC;
+        header.version = MESH4D_VERSION;
+        header.vertexCount = static_cast<uint32_t>(vertices.size());
+        header.tetraCount = static_cast<uint32_t>(tetrahedra.size());
+        header.triangleCount = static_cast<uint32_t>(surfaceTriangles.size());
+    }
+
 public:
+    [[nodiscard]] const Mesh4DHeader& getHeader() const noexcept { return header; }
+    [[nodiscard]] const Bounds4D& getBounds() const noexcept { return bounds; }
+    [[nodiscard]] const std::vector<Vertex4D>& getVertices() const noexcept { return vertices; }
+    [[nodiscard]] std::vector<Vertex4D>& getVertices() noexcept { return vertices; }
+    [[nodiscard]] const std::vector<Tetrahedron>& getTetrahedra() const noexcept { return tetrahedra; }
+    [[nodiscard]] std::vector<Tetrahedron>& getTetrahedra() noexcept { return tetrahedra; }
+    [[nodiscard]] const std::vector<Triangle>& getSurfaceTriangles() const noexcept { return surfaceTriangles; }
+    [[nodiscard]] std::vector<Triangle>& getSurfaceTriangles() noexcept { return surfaceTriangles; }
+
+    [[nodiscard]] bool empty() const noexcept {
+        return vertices.empty() && tetrahedra.empty() && surfaceTriangles.empty();
+    }
+
+    void clear() noexcept {
+        vertices.clear();
+        tetrahedra.clear();
+        surfaceTriangles.clear();
+        bounds = {};
+        header = {};
+        syncHeader();
+    }
+
+    void reserve(const std::size_t vertexCapacity, const std::size_t tetraCapacity = 0,
+                 const std::size_t triangleCapacity = 0) {
+        vertices.reserve(vertexCapacity);
+        tetrahedra.reserve(tetraCapacity);
+        surfaceTriangles.reserve(triangleCapacity);
+    }
+
+    void refreshHeader() noexcept {
+        syncHeader();
+    }
+
+    [[nodiscard]] bool validate() const noexcept {
+        return header.magic == MESH4D_MAGIC &&
+            header.version == MESH4D_VERSION &&
+            header.vertexCount == vertices.size() &&
+            header.tetraCount == tetrahedra.size() &&
+            header.triangleCount == surfaceTriangles.size();
+    }
+
+    Vertex4D& addVertex(const Vertex4D& vertex) {
+        vertices.push_back(vertex);
+
+        if (vertices.size() == 1) {
+            bounds.min = bounds.max = vertex.position;
+        }
+        else {
+            const Vec4& p = vertex.position;
+
+            bounds.min.x = std::min(bounds.min.x, p.x);
+            bounds.min.y = std::min(bounds.min.y, p.y);
+            bounds.min.z = std::min(bounds.min.z, p.z);
+            bounds.min.w = std::min(bounds.min.w, p.w);
+
+            bounds.max.x = std::max(bounds.max.x, p.x);
+            bounds.max.y = std::max(bounds.max.y, p.y);
+            bounds.max.z = std::max(bounds.max.z, p.z);
+            bounds.max.w = std::max(bounds.max.w, p.w);
+        }
+
+        header.vertexCount = static_cast<uint32_t>(vertices.size());
+        return vertices.back();
+    }
+
+    Vertex4D& addVertex(const Vec4& position, const Vec4& normal4D = {}, const Vec2& uv = {},
+                        const uint32_t material = 0) {
+        return addVertex(Vertex4D{position, normal4D, uv, material});
+    }
+
+    Tetrahedron& addTetrahedron(const uint32_t a, const uint32_t b, const uint32_t c, const uint32_t d) {
+        tetrahedra.push_back({a, b, c, d});
+        header.tetraCount = static_cast<uint32_t>(tetrahedra.size());
+        return tetrahedra.back();
+    }
+
+    Triangle& addTriangle(const uint32_t a, const uint32_t b, const uint32_t c) {
+        surfaceTriangles.push_back({a, b, c});
+        header.triangleCount = static_cast<uint32_t>(surfaceTriangles.size());
+        return surfaceTriangles.back();
+    }
+
     void computeBounds() {
         assert(!vertices.empty());
 
@@ -109,82 +198,33 @@ public:
         }
     }
 
-    SerialisedMesh4D serialise() {
-        const u_int64_t size = sizeof(Mesh4DHeader) +
-            vertices.size() * sizeof(Vertex4D) +
-            tetrahedra.size() * sizeof(Tetrahedron) +
-            surfaceTriangles.size() * sizeof(Triangle) +
-            sizeof(Bounds4D) + 1024;
-        flatbuffers::FlatBufferBuilder builder(size);
-
-        const auto header_offset = mesh4d_fbs::CreateMesh4DHeader(
-            builder,
-            header.magic,
-            header.version,
-            header.vertexCount,
-            header.tetraCount,
-            header.triangleCount,
-            header.flags
-        );
-
-        // Convert structs to fbs versions
-
-        std::vector<mesh4d_fbs::Vertex4D> fb_vertices;
-        fb_vertices.reserve(vertices.size());
-        for (const auto& [position, normal4D, uv, material] : vertices) {
-            fb_vertices.emplace_back(
-                mesh4d_fbs::Vec4(position.x, position.y, position.z, position.w),
-                mesh4d_fbs::Vec4(normal4D.x, normal4D.y, normal4D.z, normal4D.w),
-                mesh4d_fbs::Vec2(uv.x, uv.y),
-                material
-            );
-        }
-        const auto vertices_offset = builder.CreateVectorOfStructs(fb_vertices.data(), fb_vertices.size());
-
-        std::vector<mesh4d_fbs::Tetrahedron> fb_tetrahedra;
-        fb_tetrahedra.reserve(tetrahedra.size());
-        for (const auto& [a, b, c, d] : tetrahedra) {
-            fb_tetrahedra.emplace_back(a, b, c, d);
-        }
-        const auto tetrahedra_offset = builder.CreateVectorOfStructs(fb_tetrahedra.data(), fb_tetrahedra.size());
-
-        std::vector<mesh4d_fbs::Triangle> fb_triangles;
-        fb_triangles.reserve(surfaceTriangles.size());
-        for (const auto& [a, b, c] : surfaceTriangles) {
-            fb_triangles.emplace_back(a, b, c);
-        }
-        const auto triangle_offset = builder.CreateVectorOfStructs(fb_triangles.data(), fb_triangles.size());
-
-        const mesh4d_fbs::Bounds4D fb_bounds(
-            mesh4d_fbs::Vec4(bounds.min.x, bounds.min.y, bounds.min.z, bounds.min.w),
-            mesh4d_fbs::Vec4(bounds.max.x, bounds.max.y, bounds.max.z, bounds.max.w)
-        );
-
-        // serialise
-
-        const auto mesh_offset = mesh4d_fbs::CreateMesh4D(
-            builder,
-            header_offset,
-            vertices_offset,
-            tetrahedra_offset,
-            triangle_offset,
-            &fb_bounds
-        );
-
-        builder.Finish(mesh_offset);
-
-        return {builder.GetBufferPointer(), builder.GetSize()};
+    template <class Archive>
+    void serialise(Archive& ar) {
+        ar(header, bounds, vertices, tetrahedra, surfaceTriangles);
     }
-};
 
-class ImmutableMesh4D : Mesh4D {
-    std::shared_ptr<std::vector<uint8_t>> buffer; // To keep buffer alive
-    const mesh4d_fbs::Mesh4D* fb_mesh = nullptr;
+    template <class Archive>
+    void save(Archive& ar) const {
+        auto* self = const_cast<Mesh4D*>(this);
+        self->syncHeader();
+        self->serialise(ar);
+    }
 
-public:
-    explicit ImmutableMesh4D(SerialisedMesh4D& serialised_mesh) {
-        this->buffer = serialised_mesh.buf;
-        this->fb_mesh = mesh4d_fbs::GetMesh4D(this->buffer->data());
+    template <class Archive>
+    void load(Archive& ar) {
+        serialise(ar);
+
+        if (header.magic != MESH4D_MAGIC || header.version != MESH4D_VERSION) {
+            throw cereal::Exception("Invalid Mesh4D header");
+        }
+
+        if (header.vertexCount != vertices.size() ||
+            header.tetraCount != tetrahedra.size() ||
+            header.triangleCount != surfaceTriangles.size()) {
+            throw cereal::Exception("Mesh4D header counts do not match payload");
+        }
+
+        syncHeader();
     }
 };
 

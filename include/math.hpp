@@ -335,19 +335,19 @@ using Mat4x3 = Matrix<4, 3>;
 // FIXME These matrices aren't even being used
 inline Mat4 rotY(const float a) {
     Mat4 r = Mat4::identity();
-    r.data[0][0] = cos(a);
-    r.data[0][2] = sin(a);
-    r.data[2][0] = -sin(a);
-    r.data[2][2] = cos(a);
+    r.data[0][0] = std::cos(a);
+    r.data[0][2] = std::sin(a);
+    r.data[2][0] = -std::sin(a);
+    r.data[2][2] = std::cos(a);
     return r;
 }
 
 inline Mat4 rotX(const float a) {
     Mat4 r = Mat4::identity();
-    r.data[1][1] = cos(a);
-    r.data[1][2] = -sin(a);
-    r.data[2][1] = sin(a);
-    r.data[2][2] = cos(a);
+    r.data[1][1] = std::cos(a);
+    r.data[1][2] = -std::sin(a);
+    r.data[2][1] = std::sin(a);
+    r.data[2][2] = std::cos(a);
     return r;
 }
 

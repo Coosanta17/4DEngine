@@ -4,50 +4,30 @@ project(4DEngine)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 
-# macOS Homebrew hint
-if (APPLE)
-    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew" "/usr/local")
-endif ()
+find_package(SDL2)
+find_package(cereal REQUIRED)
 
-find_package(SDL2 CONFIG REQUIRED)
-find_package(flatbuffers CONFIG REQUIRED)
-
-set(FB_SCHEMA
-        "${CMAKE_CURRENT_SOURCE_DIR}/resources/mesh4d.fbs"
-)
-set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated")
-file(MAKE_DIRECTORY "${GENERATED_DIR}")
-
-find_program(FLATC_EXECUTABLE NAMES flatc
-    HINTS
-        ${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-linux/tools/flatbuffers
-)
-add_custom_command(
-        OUTPUT "${GENERATED_DIR}/mesh4d_generated.h"
-        COMMAND "${FLATC_EXECUTABLE}" --cpp --gen-mutable -o "${GENERATED_DIR}" "${FB_SCHEMA}"
-        DEPENDS "${FB_SCHEMA}"
-        COMMENT "Generating C++ headers from FlatBuffers schema"
-)
-
-add_custom_target(GenerateFlatBuffers ALL
-        DEPENDS "${GENERATED_DIR}/mesh4d_generated.h"
-)
-
-add_executable(4DEngine main.cpp
+add_library(4DEngine
         include/math.hpp
         include/Camera3D.hpp
         include/mesh.hpp
         include/renderer.hpp
         include/Camera4D.hpp
         include/Camera.hpp
-        include/mesh4d.hpp
-        "${GENERATED_DIR}/mesh4d_generated.h")
+        include/mesh4d.hpp)
 
-add_dependencies(4DEngine GenerateFlatBuffers)
-target_include_directories(4DEngine PRIVATE "${GENERATED_DIR}")
+# temporary for ease of distribution - planning to use .so/.dll once finished.
+target_link_libraries(4DEngine PRIVATE
+        SDL2::SDL2main
+        SDL2::SDL2
+        cereal::cereal
+)
 
-# temporary for ease of distribution
-target_link_libraries(4DEngine PRIVATE SDL2::SDL2main SDL2::SDL2 flatbuffers::flatbuffers)
+add_executable(FirstPersonTest examples/first_person_test/main.cpp)
+target_link_libraries(FirstPersonTest PRIVATE 4DEngine)
+
+add_executable(GenerateMeshes examples/meshes/generate.cpp)
+target_link_libraries(GenerateMeshes PRIVATE 4DEngine)
 
 # Statically link msvc dlls temporary for ease of distribution
 if (WIN32)
