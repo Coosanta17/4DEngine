@@ -6,89 +6,48 @@ on:
 
 jobs:
   build:
+    name: Build on ${{ matrix.os }} (${{ matrix.build_type }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
-
-    runs-on: ${{ matrix.os }}
-
-    env:
-      VCPKG_DEFAULT_TRIPLET: ${{ matrix.os == 'windows-latest' && 'x64-windows-static' || 'x64-linux' }}
-      VCPKG_FEATURE_FLAGS: "manifests"
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_installed
+        os: [ubuntu-latest, windows-latest]
+        build_type: [Release] # Adding just in case I need Debug
 
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Linux dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14' # Pithon haha get it?
+
+      - name: Install Conan
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            curl zip unzip tar \
-            ninja-build \
-            build-essential \
-            autoconf \
-            automake \
-            autoconf-archive \
-            libtool \
-            libltdl-dev \
-            pkg-config \
-            libx11-dev libxft-dev libxext-dev \
-            libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-            libibus-1.0-dev
+          pip install conan
+          conan --version
 
-      - name: Install Ninja (Windows)
-        if: matrix.os == 'windows-latest'
-        run: choco install ninja
-
-      - name: Set up MSVC
-        if: matrix.os == 'windows-latest'
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Ensure vcpkg_installed exists
-        run: mkdir -p ${{ github.workspace }}/vcpkg_installed
-
-      - name: Cache vcpkg
+      - name: Cache Conan Packages
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/vcpkg_installed
-          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
+          path: ~/.conan2/p
+          key: ${{ matrix.os }}-conan-${{ hashFiles('**/conanfile.txt') }}
           restore-keys: |
-            ${{ runner.os }}-vcpkg-
+            ${{ matrix.os }}-conan-
 
-      - name: Clone vcpkg
+      - name: Detect Conan Profile
         run: |
-          git clone https://github.com/microsoft/vcpkg.git
+          conan profile detect --force
 
-      - name: Bootstrap vcpkg (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: ./vcpkg/bootstrap-vcpkg.sh
+      - name: Conan Install Dependencies
+        run: |
+          conan install . -s build_type=${{ matrix.build_type }} --build=missing -pr:b=default -pr:h=default
 
-      - name: Bootstrap vcpkg (Windows)
-        if: matrix.os == 'windows-latest'
-        run: .\vcpkg\bootstrap-vcpkg.bat
+      - name: CMake Configure
+        run: |
+          cmake -S . -B build/${{ matrix.build_type }} --preset conan-${{ matrix.build_type == 'Debug' && 'debug' || 'release' }}
 
-      - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Upload Linux
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: 4DEngine-linux
-          path: build/4DEngine
-
-      - name: Upload Windows
-        if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: 4DEngine-windows
-          path: |
-            build/4DEngine.exe
-            build/*.dll
+      - name: CMake Build
+        run: |
+          cmake --build build/${{ matrix.build_type }} -j
