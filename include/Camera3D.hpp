@@ -15,64 +15,22 @@ class Camera3D final : public Camera<3> {
 protected:
 
 public:
-    // TODO: optimise unnecessary forward() calls before it becomes a problem
-    // x=right, y=forward, z=up
-    [[nodiscard]] Vec3 forward() const {
-        const Vec3 result{cos(pitch) * sin(yaw), cos(pitch) * cos(yaw), sin(pitch)};
-        return result.normalise();
-    }
+    [[nodiscard]] Vec3 forward() const;
+    [[nodiscard]] Vec3 right() const;
+    [[nodiscard]] Vec3 up() const;
 
-    [[nodiscard]] Vec3 right() const {
-        return forward().cross(Vec3{0, 0, 1}).normalise();
-    }
+    void lookLeft();
+    void lookRight();
+    void lookUp();
+    void lookDown();
+    void deltaLook(const float& deltaX, const float& deltaY);
 
-    [[nodiscard]] Vec3 up() const {
-        return right().cross(forward()).normalise();
-    }
-
-    void lookLeft() {
-        applyLookDelta(-1.0f, 0.0f);
-    }
-
-    void lookRight() {
-        applyLookDelta(1.0f, 0.0f);
-    }
-
-    void lookUp() {
-        applyLookDelta(0.0f, 1.0f);
-    }
-
-    void lookDown() {
-        applyLookDelta(0.0f, -1.0f);
-    }
-
-    void deltaLook(const float& deltaX, const float& deltaY) {
-        applyLookDelta(deltaX, deltaY);
-    }
-
-    void moveForward() {
-        applyMoveDelta(forward());
-    }
-
-    void moveBackward() {
-        applyMoveDelta(-forward());
-    }
-
-    void moveRight() {
-        applyMoveDelta(right());
-    }
-
-    void moveLeft() {
-        applyMoveDelta(-right());
-    }
-
-    void moveUp() {
-        applyMoveDelta(up());
-    }
-
-    void moveDown() {
-        applyMoveDelta(-up());
-    }
+    void moveForward();
+    void moveBackward();
+    void moveRight();
+    void moveLeft();
+    void moveUp();
+    void moveDown();
 };
 
 #endif

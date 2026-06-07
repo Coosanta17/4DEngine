@@ -13,104 +13,28 @@ class Camera4D final : public Camera<4> {
 protected:
 
 public:
-    // x=right, y=forward, z=up, w=ana.
-    [[nodiscard]] Vec4 forward() const {
-        const auto result = Vec4{
-            cos(broach) * cos(pitch) * sin(yaw),
-            cos(broach) * cos(pitch) * cos(yaw),
-            cos(broach) * sin(pitch),
-            sin(broach)
-        };
-        //std::cout << "forward: (" << result.x << ", " << result.y << ", " << result.z << ", " << result.w << ")" << std::endl;
-        return result;
-    }
+    [[nodiscard]] Vec4 forward() const;
+    [[nodiscard]] Vec4 right() const;
+    [[nodiscard]] Vec4 up() const;
+    [[nodiscard]] Vec4 ana() const;
 
-    [[nodiscard]] Vec4 right() const {
-        return Vec4{
-            cos(yaw),
-            -sin(yaw),
-            0.0f,
-            0.0f
-        };
-    }
+    void moveForward();
+    void moveBackward();
+    void moveRight();
+    void moveLeft();
+    void moveUp();
+    void moveDown();
+    void moveAta();
+    void moveKata();
 
-    [[nodiscard]] Vec4 up() const {
-        return Vec4{
-            -sin(pitch) * sin(yaw),
-            -sin(pitch) * cos(yaw),
-            cos(pitch),
-            0.0f
-        };
-    }
+    void lookLeft();
+    void lookRight();
+    void lookUp();
+    void lookDown();
+    void lookAna();
+    void lookKata();
 
-    [[nodiscard]] Vec4 ana() const {
-        return Vec4{
-            -sin(broach) * cos(pitch) * sin(yaw),
-            -sin(broach) * cos(pitch) * cos(yaw),
-            -sin(broach) * sin(pitch),
-            cos(broach)
-        };
-    }
-
-    void moveForward() {
-        applyMoveDelta(forward());
-    }
-
-    void moveBackward() {
-        applyMoveDelta(-forward());
-    }
-
-    void moveRight() {
-        applyMoveDelta(right());
-    }
-
-    void moveLeft() {
-        applyMoveDelta(-right());
-    }
-
-    void moveUp() {
-        applyMoveDelta(up());
-    }
-
-    void moveDown() {
-        applyMoveDelta(-up());
-    }
-
-    void moveAta() {
-        applyMoveDelta(ana());
-    }
-
-    void moveKata() {
-        applyMoveDelta(-ana());
-    }
-
-    void lookLeft() {
-        applyLookDelta(-1.0f, 0.0f, 0.0f);
-    }
-
-    void lookRight() {
-        applyLookDelta(1.0f, 0.0f, 0.0f);
-    }
-
-    void lookUp() {
-        applyLookDelta(0.0f, 1.0f, 0.0f);
-    }
-
-    void lookDown() {
-        applyLookDelta(0.0f, -1.0f, 0.0f);
-    }
-
-    void lookAna() {
-        applyLookDelta(0.0f, 0.0f, 0.1f);
-    }
-
-    void lookKata() {
-        applyLookDelta(0.0f, 0.0f, -0.1f);
-    }
-
-    void deltaLook(const float& deltaX, const float& deltaY) {
-        applyLookDelta(deltaX, deltaY, 0.0f);
-    }
+    void deltaLook(const float& deltaX, const float& deltaY);
 };
 
 #endif

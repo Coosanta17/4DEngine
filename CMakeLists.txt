@@ -4,7 +4,7 @@ project(4DEngine)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 
-find_package(SDL2)
+find_package(SDL3 REQUIRED)
 find_package(cereal REQUIRED)
 
 add_library(4DEngine
@@ -14,20 +14,29 @@ add_library(4DEngine
         include/renderer.hpp
         include/Camera4D.hpp
         include/Camera.hpp
-        include/mesh4d.hpp)
+        include/mesh4d.hpp
+        include/AppWindow.hpp
+        src/Camera3D.cpp
+        src/Camera4D.cpp
+        src/mesh4d.cpp
+        src/renderer.cpp
+        src/AppWindow.cpp
+)
 
 # temporary for ease of distribution - planning to use .so/.dll once finished.
 target_link_libraries(4DEngine PRIVATE
-        SDL2::SDL2main
-        SDL2::SDL2
+        sdl::sdl
         cereal::cereal
 )
 
 add_executable(FirstPersonTest examples/first_person_test/main.cpp)
-target_link_libraries(FirstPersonTest PRIVATE 4DEngine)
+target_link_libraries(FirstPersonTest PRIVATE
+        4DEngine
+        sdl::sdl
+        cereal::cereal)
 
 add_executable(GenerateMeshes examples/meshes/generate.cpp)
-target_link_libraries(GenerateMeshes PRIVATE 4DEngine)
+target_link_libraries(GenerateMeshes PRIVATE 4DEngine cereal::cereal)
 
 # Statically link msvc dlls temporary for ease of distribution
 if (WIN32)

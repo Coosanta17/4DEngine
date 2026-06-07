@@ -1,4 +1,8 @@
-./.idea/
+.idea/
 *.exe
-./build
-./generated
+*.dll
+*.a
+*.so
+generated
+.cmake
+build
