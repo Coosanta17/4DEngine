@@ -42,7 +42,7 @@ jobs:
 
       - name: Conan Install Dependencies
         run: |
-          conan install . -s build_type=${{ matrix.build_type }} --build=missing -pr:b=default -pr:h=default
+          conan install . -s build_type=${{ matrix.build_type }} --build=missing -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True
 
       - name: CMake Configure
         run: |
