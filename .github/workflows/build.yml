@@ -44,10 +44,31 @@ jobs:
         run: |
           conan install . -s build_type=${{ matrix.build_type }} --build=missing -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True
 
-      - name: CMake Configure
+      - name: CMake Configure Linux
+        if: matrix.os == 'ubuntu-latest'
         run: |
           cmake -S . -B build/${{ matrix.build_type }} --preset conan-${{ matrix.build_type == 'Debug' && 'debug' || 'release' }}
+
+      - name: CMake Configure Windows
+        if: matrix.os == 'windows-latest'
+        # FIXME: why is windows being difficult again >:(
+        run: |
+          cmake -S . -B build/${{ matrix.build_type }} --preset conan-default
 
       - name: CMake Build
         run: |
           cmake --build build/${{ matrix.build_type }} -j
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: program-binaries-${{ matrix.os }}-${{ matrix.build_type }}
+          path: |
+            build/${{ matrix.build_type }}/**/GenerateMeshes
+            build/${{ matrix.build_type }}/**/GenerateMeshes.exe
+            build/${{ matrix.build_type }}/**/FirstPersonTest
+            build/${{ matrix.build_type }}/**/FirstPersonTest.exe
+            build/${{ matrix.build_type }}/**/lib4DEngine.a
+            build/${{ matrix.build_type }}/**/lib4DEngine.lib
+            build/${{ matrix.build_type }}/**/4DEngine.lib
+          if-no-files-found: error
